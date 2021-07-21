@@ -9,7 +9,7 @@ class WeightedPool(WeightedMath):
         self._swap_fee = MIN_FEE
         self.total_weight = Decimal('0')
         self._pool_token_supply = initial_pool_supply
-        self.factory_fees = Decimal('0')
+        self.factory_fees = {}
         self._balances = {}
         self._weights = {}
 
@@ -19,22 +19,55 @@ class WeightedPool(WeightedMath):
             amount = Decimal(amount)
         elif(not isinstance(amount, Decimal)):
             raise Exception("INCORRECT_TYPE")
-        factory_fee = amount*self._swap_fee
-        swap_amount = amount - factory_fee
-        self.factory_fees += factory_fee
+            
         balances = [self._balances[token_in], self._balances[token_out]]
         weights = [self._weights[token_in], self._weights[token_out]]
-        
-        if(given_in):
-            amount_in = swap_amount
+
+        returnVal = Decimal(0.0)
+
+        if (given_in):
+            swap_amount = amount / (1 + self._swap_fee)
+            factory_fee = swap_amount*self._swap_fee
+            self.factory_fees[token_in] += factory_fee
+            amount_in = amount
             amount_out = WeightedMath.calc_out_given_in(balances[0], weights[0], balances[1], weights[1], swap_amount)
+            returnVal = amount_out
+
         else:
-            amount_in = WeightedMath.calc_in_given_out(balances[0], weights[0], balances[1], weights[1], swap_amount)
-            amount_out = swap_amount
+            swap_amount = WeightedMath.calc_in_given_out(balances[0], weights[0], balances[1], weights[1], amount)
+            factory_fee = swap_amount*self._swap_fee
+            self.factory_fees[token_in] += factory_fee
+            amount_in = swap_amount + factory_fee
+            amount_out = amount
+            returnVal = amount_in
             
         self._balances[token_out] -= amount_out
         self._balances[token_in] += amount_in
-        return amount_out
+
+        return returnVal
+        
+
+    # def swap(self, token_in: str, token_out: str, amount: Decimal, given_in: bool = True):
+    #     if(isinstance(amount,int) or isinstance(amount,float)):
+    #         amount = Decimal(amount)
+    #     elif(not isinstance(amount, Decimal)):
+    #         raise Exception("INCORRECT_TYPE")
+    #     factory_fee = amount*self._swap_fee
+    #     swap_amount = amount - factory_fee
+    #     self.factory_fees += factory_fee
+    #     balances = [self._balances[token_in], self._balances[token_out]]
+    #     weights = [self._weights[token_in], self._weights[token_out]]
+        
+    #     if(given_in):
+    #         amount_in = swap_amount
+    #         amount_out = WeightedMath.calc_out_given_in(balances[0], weights[0], balances[1], weights[1], swap_amount)
+    #     else:
+    #         amount_in = WeightedMath.calc_in_given_out(balances[0], weights[0], balances[1], weights[1], swap_amount)
+    #         amount_out = swap_amount
+            
+    #     self._balances[token_out] -= amount_out
+    #     self._balances[token_in] += amount_in
+    #     return amount_out
     
     def join_pool(self, balances: dict, weights: dict):
         if(not balances.keys()==weights.keys()): raise Exception('KEYS NOT EQUAL')
@@ -50,6 +83,12 @@ class WeightedPool(WeightedMath):
             else:
                 self._balances.update({key:balances[key]})
         self._weights = weights
+
+        # Initialise factory_fees dict if non-existant
+        if not self.factory_fees:
+            self.factory_fees = {}
+            for key in self._balances:
+                self.factory_fees[key] = Decimal(0.0)
 
         if(len(self._balances)>8):
             raise Exception("over 8 tokens")
