@@ -1,5 +1,8 @@
 # te-balancer-amms
+# Balancer V2 Dynamic Weghts Adjusting Pools
+Utilising Dynamic Weigths Changing with the goal of minimizing Impermanent Loss (IL) through implementing a open-loop, closed loop system(s) in a Balancer pool.
 Repository for containing all my working documents for the TE Balancer AMM research group
+See the [HackMD](https://hackmd.io/RJfV_fy3SZSWdgZcpdUD1A) for a more thorough overview
 
 ## NOTE:
 Ideally the codebase would reference the balancerv2cad python library found [here](https://github.com/metavisionlabs/balancerv2cad), however I temporarily copied in the codebase with some modifications to particular methods to fit my needs.
