@@ -4,4 +4,4 @@ __pycache__/
 credentials.json
 venv
 
-data
+tags*
